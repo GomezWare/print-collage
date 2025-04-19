@@ -4,20 +4,22 @@ import { fileURLToPath } from 'url';
 import PDFDocument from 'pdfkit';
 import sharp from 'sharp';
 
+// Get current file and directory path
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Input and output paths
 const INPUT_DIR = path.join(__dirname, 'input');
-const OUTPUT_FILE = path.join(__dirname, 'output', 'estampitas.pdf');
+const OUTPUT_FILE = path.join(__dirname, 'output', 'stickers.pdf');
 
-// Tamaño A4 en puntos
+// A4 size in points
 const A4_WIDTH = 595.28;
 const A4_HEIGHT = 841.89;
 
-// Ajustes de layout
+// Layout settings
 const MARGIN = 20;
-const STAMP_WIDTH = 110;
-const STAMP_HEIGHT = 150;
+const STICKER_WIDTH = 110;
+const STICKER_HEIGHT = 150;
 const SPACE_X = 5;
 const SPACE_Y = 5;
 
@@ -25,16 +27,20 @@ const IMAGES_PER_ROW = 5;
 
 const generatePDF = async () => {
   try {
+    // Read and filter image files from input directory
     const files = (await fs.readdir(INPUT_DIR))
       .filter(f => /\.(png|jpe?g)$/i.test(f))
       .sort();
 
     if (files.length === 0) {
-      console.warn('⚠️ No hay imágenes en la carpeta "input".');
+      console.warn('⚠️ No images found in the "input" folder.');
       return;
     }
 
+    // Ensure the output directory exists
     await fs.ensureDir(path.dirname(OUTPUT_FILE));
+
+    // Create a new PDF document
     const doc = new PDFDocument({ size: 'A4', margin: 0 });
     doc.pipe(fs.createWriteStream(OUTPUT_FILE));
 
@@ -45,31 +51,33 @@ const generatePDF = async () => {
       const inputPath = path.join(INPUT_DIR, file);
 
       try {
-        // Genera la imagen una sola vez y reutiliza el buffer
+        // Resize the image to a higher resolution and convert to PNG buffer
         const buffer = await sharp(inputPath)
           .resize({
-            width: STAMP_WIDTH * 3, // Generamos en más resolución para mantener calidad
-            height: STAMP_HEIGHT * 3,
+            width: STICKER_WIDTH * 3, // Resize to higher resolution for better quality
+            height: STICKER_HEIGHT * 3,
             fit: 'cover',
             position: 'center'
           })
           .png()
           .toBuffer();
 
-        // Repite la misma imagen 5 veces por fila
-        for (let i = 0; i < 5; i++) {
+        // Repeat the same image 5 times per row
+        for (let i = 0; i < IMAGES_PER_ROW; i++) {
           doc.image(buffer, x, y, {
-            width: STAMP_WIDTH,
-            height: STAMP_HEIGHT
+            width: STICKER_WIDTH,
+            height: STICKER_HEIGHT
           });
 
-          x += STAMP_WIDTH + SPACE_X;
+          x += STICKER_WIDTH + SPACE_X;
 
-          if (i === 4) {
+          // Move to the next row after placing 5 images
+          if (i === IMAGES_PER_ROW - 1) {
             x = MARGIN;
-            y += STAMP_HEIGHT + SPACE_Y;
+            y += STICKER_HEIGHT + SPACE_Y;
 
-            if (y + STAMP_HEIGHT > A4_HEIGHT - MARGIN) {
+            // Add new page if vertical space is exceeded
+            if (y + STICKER_HEIGHT > A4_HEIGHT - MARGIN) {
               doc.addPage();
               x = MARGIN;
               y = MARGIN;
@@ -77,14 +85,14 @@ const generatePDF = async () => {
           }
         }
       } catch (imgErr) {
-        console.error(`❌ Error procesando "${file}":`, imgErr.message);
+        console.error(`❌ Error processing "${file}":`, imgErr.message);
       }
     }
 
     doc.end();
-    console.log(`✅ PDF generado con éxito en: ${OUTPUT_FILE}`);
+    console.log(`✅ PDF successfully generated at: ${OUTPUT_FILE}`);
   } catch (err) {
-    console.error('💥 Error general al generar el PDF:', err.message);
+    console.error('💥 General error while generating the PDF:', err.message);
   }
 };
 
