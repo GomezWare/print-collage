@@ -1,0 +1,19 @@
+{
+  "name": "printe-collage",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "description": "",
+  "dependencies": {
+    "@svgdotjs/svg.js": "^3.2.4",
+    "fs-extra": "^11.3.0",
+    "pdfkit": "^0.17.0",
+    "sharp": "^0.34.1",
+    "yargs": "^17.7.2"
+  }
+}
